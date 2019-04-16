@@ -229,11 +229,11 @@ server <- function(input, output) {
 
       if (input$facet_choice == "Yes"){
         dat <- mods_facet()
-        ggplot(dat, aes(x=year, y=dat$balance)) +
+        ggplot(dat, aes(x=year, col = dat$i_mode)) +
           geom_line(aes(x = year, y = dat$balance)) +
           ylab(dat$balance) +
           labs(title = "Three Types of Savings Scenarios") + theme(plot.title = element_text(hjust = 0.5)) +
-          #scale_color_manual(name = 'variable', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution')) + 
+          scale_color_manual(name = 'variable', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution')) + 
           facet_wrap(factor(dat$i_mode))
       }else{
         data <- mods()
