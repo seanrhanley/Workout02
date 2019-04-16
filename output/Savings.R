@@ -117,6 +117,105 @@ server <- function(input, output) {
     return(mods)
     
   })
+  
+  mods_facet <- reactive({
+    
+    ################################################################################
+    #initial variables
+    i_inv <- input$init
+    rate <- input$return_rate / 100
+    growth <- input$growth_rate / 100
+    contrib <- input$contrib
+    years <- input$years
+    
+    #create initial vectors for years for each mode, including year 0
+    i_mode <- rep(0, years + 1)
+    balance <- rep(0, years + 1)
+    no_contrib <- rep(0, years + 1)
+    fixed_contrib <- rep(0, years + 1)
+    growing_contrib <- rep(0, years + 1)
+    
+    for (i in 1:years){
+      
+      if (i == 1){
+        
+        balance[i] <- i_inv
+        i_mode[i] <- 'future'
+        
+      }
+      
+      #mode1
+      balance[i + 1] <- signif(future_value(amount = i_inv, rate = rate, years = i), 7)
+      i_mode[i + 1] <- 'future'
+    }
+    
+    mode1 <- data.frame(
+      year = seq(0, years, 1),
+      'balance' <- balance,
+      'i_mode' <- i_mode
+    )
+    
+    i_mode <- rep(0, years + 1)
+    balance <- rep(0, years + 1)
+    no_contrib <- rep(0, years + 1)
+    fixed_contrib <- rep(0, years + 1)
+    growing_contrib <- rep(0, years + 1)
+    
+    for (i in 1:years){
+      
+      if (i == 1){
+        
+        balance[i] <- i_inv
+        i_mode[i] <- 'annuity'
+        
+      }
+      
+      #mode2
+      balance[i + 1] <- signif(annuity(contrib = contrib, rate = rate, years = i) + no_contrib[i+1], 7)
+      i_mode[i + 1] <- 'annuity'
+    }
+    
+    mode2 <- data.frame(
+      year = seq(0, years, 1),
+      'balance' <- balance,
+      'i_mode' <- i_mode
+    )
+    
+    i_mode <- rep(0, years + 1)
+    balance <- rep(0, years + 1)
+    no_contrib <- rep(0, years + 1)
+    fixed_contrib <- rep(0, years + 1)
+    growing_contrib <- rep(0, years + 1)
+    
+    for (i in 1:years){
+      
+      if (i == 1){
+        
+        balance[i] <- i_inv
+        i_mode[i] <- 'growing'
+        
+      }
+      
+      #mode3
+      balance[i + 1] <- signif(growing_annuity(contrib = contrib, rate = rate, growth = growth, years = i) + no_contrib[i+1], 7)
+      i_mode[i + 1] <- 'growing'
+    }
+    
+    mode3 <- data.frame(
+      year = seq(0, years, 1),
+      'balance' <- balance,
+      'i_mode' <- i_mode
+    )
+    
+    
+    #merge all data.frames into one
+    mods_facet <- rbind(mode1, mode2, mode3)
+    colnames(mods_facet) <- c('year', 'balance', 'i_mode')
+    
+    return(mods_facet)
+    ################################################################################
+    
+  })
    
   
     output$modular <- renderPrint({
@@ -127,15 +226,25 @@ server <- function(input, output) {
       
     })
     output$timelines <- renderPlot({
-      
-      data <- mods()
-      ggplot(data) +
-        geom_line(aes(x=year, y=Growing.Contribution, color = 'red')) +
-        geom_line(aes(x=year, y=Fixed.Contribution, color = 'green')) +
-        geom_line(aes(x=year, y=No.Contribution, color = 'blue')) +
-        ylab('balance') +
-        labs(title = "Three Types of Savings Scenarios") + theme(plot.title = element_text(hjust = 0.5)) +
-        scale_color_manual(name = 'Modality', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution'))
+
+      if (input$facet_choice == "Yes"){
+        dat <- mods_facet()
+        ggplot(dat, aes(x=year, y=dat$balance)) +
+          geom_line(aes(x = year, y = dat$balance)) +
+          ylab(dat$balance) +
+          labs(title = "Three Types of Savings Scenarios") + theme(plot.title = element_text(hjust = 0.5)) +
+          #scale_color_manual(name = 'variable', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution')) + 
+          facet_wrap(factor(dat$i_mode))
+      }else{
+        data <- mods()
+        ggplot(data) +
+          geom_line(aes(x=year, y=Growing.Contribution, color = 'red')) +
+          geom_line(aes(x=year, y=Fixed.Contribution, color = 'green')) +
+          geom_line(aes(x=year, y=No.Contribution, color = 'blue')) +
+          ylab('balance') +
+          labs(title = "Three Types of Savings Scenarios") + theme(plot.title = element_text(hjust = 0.5)) +
+          scale_color_manual(name = 'Modality', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution'))
+      }
       
     })
   
