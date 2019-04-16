@@ -1,4 +1,5 @@
 library(shiny)
+library(ggplot2)
 source("InvestmentFunctions.R")
 
 # Define UI for application that draws a histogram
@@ -56,8 +57,13 @@ ui <- fluidPage(
     ##<hr></hr>
   ),
   fluidRow(
-      h4("Balances"),
-      tableOutput("modular")
+    h4("Timelines"),
+    plotOutput("timelines")
+    
+  ),
+  fluidRow(
+    h4("Balances"),
+    verbatimTextOutput("modular")
   )
 )
 
@@ -69,17 +75,17 @@ server <- function(input, output) {
    
   mods <- reactive({
     
-    #create initial vectors for years for each mode, including year 0
-    no_contrib <- rep(0, input$years + 1)
-    fixed_contrib <- rep(0, input$years + 1)
-    growing_contrib <- rep(0, input$years + 1)
-    
     #initial variables
     i_inv <- input$init
     rate <- input$return_rate / 100
     growth <- input$growth_rate / 100
     contrib <- input$contrib
     years <- input$years
+    
+    #create initial vectors for years for each mode, including year 0
+    no_contrib <- rep(0, years + 1)
+    fixed_contrib <- rep(0, years + 1)
+    growing_contrib <- rep(0, years + 1)
     
     for (i in 1:years){
       
@@ -112,10 +118,24 @@ server <- function(input, output) {
     
   })
    
-    output$modular <- renderTable({
+  
+    output$modular <- renderPrint({
       
       data <- mods()
-      head(data, n = isolate(input$years + 1))
+      head(data, n = isolate(input$years) + 1)
+      
+      
+    })
+    output$timelines <- renderPlot({
+      
+      data <- mods()
+      ggplot(data) +
+        geom_line(aes(x=year, y=Growing.Contribution, color = 'red')) +
+        geom_line(aes(x=year, y=Fixed.Contribution, color = 'green')) +
+        geom_line(aes(x=year, y=No.Contribution, color = 'blue')) +
+        ylab('balance') +
+        labs(title = "Three Types of Savings Scenarios") + theme(plot.title = element_text(hjust = 0.5)) +
+        scale_color_manual(name = 'Modality', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution'))
       
     })
   
