@@ -210,7 +210,7 @@ server <- function(input, output) {
     
     #merge all data.frames into one
     mods_facet <- rbind(mode1, mode2, mode3)
-    colnames(mods_facet) <- c('year', 'balance', 'i_mode')
+    colnames(mods_facet) <- c('year', 'balance', 'savings_mode')
     
     return(mods_facet)
     ################################################################################
@@ -229,12 +229,13 @@ server <- function(input, output) {
 
       if (input$facet_choice == "Yes"){
         dat <- mods_facet()
-        ggplot(dat, aes(x=year, col = dat$i_mode)) +
-          geom_line(aes(x = year, y = dat$balance)) +
+        ggplot(dat, aes(x=year,y = dat$balance, fill = savings_mode)) +
+          geom_line() + 
+          geom_area() +
           ylab(dat$balance) +
           labs(title = "Three Types of Savings Scenarios") + theme(plot.title = element_text(hjust = 0.5)) +
-          scale_color_manual(name = 'variable', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution')) + 
-          facet_wrap(factor(dat$i_mode))
+          scale_color_manual(name = 'Mode', values = c('red', 'green', 'blue'), labels = c('No Contribution','Fixed Contribution', 'Growing Contribution')) + 
+          facet_wrap(factor(dat$savings_mode))
       }else{
         data <- mods()
         ggplot(data) +
